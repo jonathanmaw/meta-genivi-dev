@@ -8,14 +8,16 @@ SRC_URI_append = "\
     file://EGLWLMockNavigation.service \
     "
 
+inherit systemd
+
 FILES_${PN} += "\
-    ${libdir}/systemd/user/* \
+    ${systemd_unitdir}/system/* \
     "
 
 do_install_append() {
-	install -d ${D}${libdir}/systemd/user
+	install -d ${D}${systemd_unitdir}/system
 	install -m 0444 ${WORKDIR}/EGLWLInputEventExample.service \
-	                ${D}${libdir}/systemd/user
+	                ${D}${systemd_unitdir}/system
 	install -m 0444 ${WORKDIR}/EGLWLMockNavigation.service \
-	                ${D}${libdir}/systemd/user
+	                ${D}${systemd_unitdir}/system
 }

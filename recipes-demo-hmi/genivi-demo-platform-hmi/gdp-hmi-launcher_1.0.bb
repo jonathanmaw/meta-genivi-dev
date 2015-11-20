@@ -16,17 +16,17 @@ SRC_URI_append_qemux86-64 ="\
 
 S = "${WORKDIR}/git/app/gdp-hmi-launcher"
 
-inherit qmake5
+inherit qmake5 systemd
 
 FILES_${PN} += "\
     ${datadir}/gdp/* \
-    ${libdir}/systemd/user/* \
+    ${systemd_unitdir}/system/* \
     "
 
 do_install_append() {
-	install -d ${D}${libdir}/systemd/user
+	install -d ${D}${systemd_unitdir}/system
 	install -m 0444 ${WORKDIR}/gdp-hmi-launcher.service \
-	                ${D}${libdir}/systemd/user
+	                ${D}${systemd_unitdir}/system
 	install -d ${D}${datadir}/gdp
 	install -m 0444 ${S}/assets/car-purple-icon.png \
 		${D}${datadir}/gdp/car-purple-icon.png

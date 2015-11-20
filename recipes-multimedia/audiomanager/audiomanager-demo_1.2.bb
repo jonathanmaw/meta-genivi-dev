@@ -22,12 +22,12 @@ PATCHTOOL = "git"
 
 QMAKE_PROFILES = "${S}/AudioManagerPoC"
 
-inherit qmake5
+inherit qmake5 systemd
 
 do_install_append() {
-    mkdir -p ${D}/etc/systemd/user
-    cp ${WORKDIR}/AudioManager_PoC.service ${D}/etc/systemd/user
+    mkdir -p ${D}${systemd_unitdir}/system
+    cp ${WORKDIR}/AudioManager_PoC.service ${D}${systemd_unitdir}/system
 }
 
-FILES_${PN} += "/opt/audiomanager-poc/*"
+FILES_${PN} += "/opt/audiomanager-poc/* ${systemd_unitdir}/system/*"
 FILES_${PN}-dbg += "/usr/bin/am-poc/.debug/*"

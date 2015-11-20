@@ -23,21 +23,28 @@ SRC_URI_append_qemux86-64 ="\
 
 S = "${WORKDIR}/git/app/gdp-hmi-launcher2"
 
-inherit qmake5
+inherit qmake5 systemd
 
 FILES_${PN} += "\
     ${datadir}/gdp/* \
-    ${libdir}/systemd/user/* \
+    ${systemd_unitdir}/system/* \
     ${bindir} \
-    /etc/systemd/user/* \
     "
 
 do_install_append() {
-	install -d ${D}${libdir}/systemd/user
+	install -d ${D}${systemd_unitdir}/system
 	install -m 0444 ${WORKDIR}/gdp-hmi-launcher2.service \
-	                ${D}${libdir}/systemd/user
+	                ${D}${systemd_unitdir}/system
 	install -m 0444 ${WORKDIR}/PowerOff.service \
-	                ${D}${libdir}/systemd/user
+	                ${D}${systemd_unitdir}/system
+	install -m 0444 ${WORKDIR}/StartLauncher.service \
+	                ${D}${systemd_unitdir}/system
+	install -m 0444 ${WORKDIR}/StartLauncher.path \
+		        ${D}${systemd_unitdir}/system
+	install -d ${D}${systemd_unitdir}/system/weston.service.wants
+	ln -sf ${systemd_unitdir}/system/StartLauncher.path \
+		${D}${systemd_unitdir}/system/weston.service.wants/StartLauncher.path
+
 	install -d ${D}${datadir}/gdp
 	install -m 0444 ${S}/content/images/hmi_icons_033115-1.png \
 		${D}${datadir}/gdp/hmi_icons_033115-1.png
@@ -87,14 +94,6 @@ do_install_append() {
 	install -m 0444 ${S}/content/images/powerOff.png \
 		${D}${datadir}/gdp/powerOff.png
 
-	install -d ${D}/etc/systemd/user
-	install -m 0444 ${WORKDIR}/StartLauncher.service \
-		${D}/etc/systemd/user
-	install -d ${D}/etc/systemd/user/default.target.wants
-	ln -sf /etc/systemd/user/StartLauncher.path \
-		${D}/etc/systemd/user/default.target.wants/StartLauncher.path
-	install -m 0444 ${WORKDIR}/StartLauncher.path \
-		${D}/etc/systemd/user
 	install install -d ${D}${bindir}
 	install -m 0755 ${WORKDIR}/start_launcher.sh ${D}/${bindir}
 	install -m 0755 ${WORKDIR}/power_off.sh ${D}/${bindir}

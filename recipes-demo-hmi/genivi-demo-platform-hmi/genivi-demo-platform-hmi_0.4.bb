@@ -16,14 +16,14 @@ S = "${WORKDIR}/git"
 
 PATCHTOOL = "git"
 
-inherit autotools pkgconfig
+inherit autotools pkgconfig systemd
 
 do_install_append() {
-	install -d ${D}${libdir}/systemd/user
+	install -d ${D}${systemd_unitdir}/system
 	install -m 0444 ${WORKDIR}/gdp-hmi-controller.service \
-	                ${D}${libdir}/systemd/user
+	                ${D}${systemd_unitdir}/system
 }
 
 FILES_${PN} += "\
-    ${libdir}/systemd/user/* \
+    ${systemd_unitdir}/system/* \
     "

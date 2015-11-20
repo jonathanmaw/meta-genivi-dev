@@ -9,13 +9,16 @@ SRC_URI_append = " file://0001-Porting-Pulse-Routing-Interface-from-AM-v1.x-to-A
                  "
 EXTRA_OECMAKE += "-DWITH_PULSE_ROUTING_PLUGIN=ON -DWITH_PULSE_CONTROL_PLUGIN=ON -DWITH_ENABLED_IPC=DBUS -DWITH_DATABASE_STORAGE=ON"
 
+inherit systemd
+
 do_install_append() {
-    mkdir -p ${D}/etc/systemd/user
-    cp ${WORKDIR}/AudioManager_user.service ${D}/etc/systemd/user/AudioManager.service
-    mkdir -p ${D}/etc/systemd/user/default.target.wants
-    ln -sf /etc/systemd/user/AudioManager.service ${D}/etc/systemd/user/default.target.wants/AudioManager.service
+    mkdir -p ${D}${systemd_unitdir}/system
+    cp ${WORKDIR}/AudioManager_user.service ${D}${systemd_unitdir}/system/AudioManager.service
+    mkdir -p ${D}${systemd_unitdir}/system/graphical.target.wants
+    ln -sf ${systemd_unitdir}/system/AudioManager.service ${D}${systemd_unitdir}/system/graphical.target.wants/AudioManager.service
 }
 
 FILES_${PN} += "${libdir}/audioManager/control/* \
                 ${libdir}/audioManager/routing/* \
+                ${systemd_unitdir}/system/* \
                "

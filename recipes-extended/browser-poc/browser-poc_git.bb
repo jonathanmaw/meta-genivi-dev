@@ -26,7 +26,7 @@ SRC_URI_append_qemux86-64 = "\
          "
 
 S = "${WORKDIR}/git"
-inherit qmake5
+inherit qmake5 systemd
 
 do_install_append() {
     mkdir -p ${D}/opt/browser/bin/
@@ -36,13 +36,14 @@ do_install_append() {
     install ${B}/testapp/testapp ${D}/opt/testapp/bin/
     cp -r ${S}/testapp/images ${D}/opt/testapp
     cp -r ${S}/testapp/qml ${D}/opt/testapp
-    mkdir -p ${D}/etc/systemd/user
-    cp ${WORKDIR}/browser.service ${WORKDIR}/demoui.service ${D}/etc/systemd/user
+    mkdir -p ${D}${systemd_unitdir}/system
+    cp ${WORKDIR}/browser.service ${WORKDIR}/demoui.service ${D}${systemd_unitdir}/system
 }
 
 FILES_${PN} += "/opt/browser/bin/* \
                 /opt/demoui/* \
                 /opt/testapp/* \
+               ${systemd_unitdir}/system/* \
                "
 
 FILES_${PN}-dbg += "/opt/browser/bin/.debug/* \

@@ -6,10 +6,17 @@ SRC_URI_append = " file://client_conf.patch \
                    file://pulseaudio_user.service \
 "
 
+inherit systemd
+
 do_install_append() {
     cp ${WORKDIR}/am_poc.pa ${D}/etc/pulse
-    mkdir -p ${D}//etc/systemd/user
-    cp ${WORKDIR}/pulseaudio_user.service ${D}/etc/systemd/user/pulseaudio.service
-    mkdir -p ${D}/etc/systemd/user/default.target.wants
-    ln -sf /etc/systemd/user/pulseaudio.service ${D}/etc/systemd/user/default.target.wants/pulseaudio.service
+    mkdir -p ${D}${systemd_unitdir}/system
+    cp ${WORKDIR}/pulseaudio_user.service ${D}${systemd_unitdir}/system/pulseaudio.service
+    mkdir -p ${D}${systemd_unitdir}/system/graphical.target.wants
+    ln -sf ${systemd_unitdir}/system/pulseaudio.service ${D}${systemd_unitdir}/system/graphical.target.wants/pulseaudio.service
 }
+
+FILES_${PN}-misc += " \
+                    /etc/pulse/* \
+                    ${systemd_unitdir}/system/* \
+                    "

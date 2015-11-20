@@ -19,15 +19,15 @@ PATCHTOOL = "git"
 
 QMAKE_PROFILES = "${S}/"
 
-inherit qmake5
+inherit qmake5 systemd
 
 do_install_append() {
-    mkdir -p ${D}/etc/systemd/user
-    cp ${WORKDIR}/AudioManager_Monitor.service ${D}/etc/systemd/user
+    mkdir -p ${D}${systemd_unitdir}/system
+    cp ${WORKDIR}/AudioManager_Monitor.service ${D}${systemd_unitdir}/system
 }
 
 INHIBIT_PACKAGE_DEBUG_SPLIT = "1"
 INHIBIT_PACKAGE_STRIP = "1"
 
-FILES_${PN} += "/opt/AudioManagerMonitor/*"
+FILES_${PN} += "/opt/AudioManagerMonitor/* ${systemd_unitdir}/system/*"
 FILES_${PN}-dbg += "/usr/bin/AudioManagerMonitor/.debug/*"

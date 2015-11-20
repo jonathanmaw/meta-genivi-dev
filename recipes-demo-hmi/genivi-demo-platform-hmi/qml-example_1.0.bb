@@ -15,14 +15,14 @@ SRC_URI_append_qemux86-64 ="\
     "
 S = "${WORKDIR}/git/app/qml-example"
 
-inherit qmake5
+inherit qmake5 systemd
 
 do_install_append() {
-	install -d ${D}${libdir}/systemd/user
+	install -d ${D}${systemd_unitdir}/system
 	install -m 0444 ${WORKDIR}/qml-example.service \
-	                ${D}${libdir}/systemd/user
+	                ${D}${systemd_unitdir}/system
 }
 
 FILES_${PN} += "\
-    ${libdir}/systemd/user/* \
+    ${systemd_unitdir}/system/* \
     "
