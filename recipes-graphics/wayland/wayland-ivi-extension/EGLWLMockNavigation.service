@@ -2,4 +2,5 @@
 Description=EGL Wayland Mock Navigation
 
 [Service]
+Environment=XDG_RUNTIME_DIR=/tmp
 ExecStart=/usr/bin/EGLWLMockNavigation

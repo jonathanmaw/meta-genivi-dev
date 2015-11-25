@@ -3,4 +3,5 @@ Description=Genivi Browser PoC service
 Requires=dbus.service
 
 [Service]
+Environment=XDG_RUNTIME_DIR=/tmp
 ExecStart=/opt/browser/bin/browser

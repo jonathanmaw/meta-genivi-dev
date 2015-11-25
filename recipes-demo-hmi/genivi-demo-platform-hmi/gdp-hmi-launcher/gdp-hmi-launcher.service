@@ -4,4 +4,5 @@ Requires=gdp-hmi-controller.service gdp-hmi-background.service gdp-hmi-panel.ser
 
 [Service]
 Environment=LD_PRELOAD=/usr/lib/libEGL.so
+Environment=XDG_RUNTIME_DIR=/tmp
 ExecStart=/usr/bin/gdp-hmi-launcher

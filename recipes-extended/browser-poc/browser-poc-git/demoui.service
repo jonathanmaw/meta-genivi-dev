@@ -4,4 +4,5 @@ Requires=browser.service
 
 [Service]
 Environment=LD_PRELOAD=/usr/lib/libEGL.so
+Environment=XDG_RUNTIME_DIR=/tmp
 ExecStart=/opt/demoui/bin/demoui

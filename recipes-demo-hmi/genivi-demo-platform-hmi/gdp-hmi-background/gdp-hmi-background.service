@@ -4,4 +4,5 @@ After=gdp-hmi-controller.service
 
 [Service]
 Environment=LD_PRELOAD=/usr/lib/libEGL.so
+Environment=XDG_RUNTIME_DIR=/tmp
 ExecStart=/usr/bin/gdp-hmi-background
