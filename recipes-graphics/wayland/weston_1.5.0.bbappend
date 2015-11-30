@@ -9,12 +9,15 @@ SRC_URI_append = "\
      file://start_browser-poc.sh \
      file://browser_poc_hack.patch \
      file://0001-configure.ac-check-for-libsystemd-instead-of-compat-.patch \
+     file://systemd-notify.patch \
      "
 
 # GDP specific weston.ini
 SRC_URI_append = " \
     file://weston.ini \
     "
+
+EXTRA_OECONF += "--enable-systemd-notify"
 
 inherit systemd
 DEPENDS_append = " systemd"

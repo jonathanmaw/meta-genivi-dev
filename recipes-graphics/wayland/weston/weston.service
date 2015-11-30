@@ -3,9 +3,14 @@ Description=Weston reference Wayland compositor
 After=dbus.service rc.pvr.service
 
 [Service]
-ExecStart=/usr/bin/weston-launch -u root -- --idle-time=4294967
-ExecStop=/usr/bin/killall -s KILL weston
-Type=simple
+Environment=XDG_RUNTIME_DIR=/tmp
+ExecStart=/usr/bin/weston --idle-time=4294967
+Type=notify
+NotifyAccess=all
+StandardInput=tty-force
+TTYPath=/dev/tty2
+Restart=always
+StartLimitInterval=0
 
 [Install]
 WantedBy=multi-user.target

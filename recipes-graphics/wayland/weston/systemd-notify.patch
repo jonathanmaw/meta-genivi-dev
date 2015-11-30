@@ -1,0 +1,182 @@
+Index: git/Makefile.am
+===================================================================
+--- git.orig/Makefile.am	2015-11-30 15:39:20.339786943 +0000
++++ git/Makefile.am	2015-11-30 15:38:14.727786943 +0000
+@@ -71,6 +71,20 @@
+ 	shared/zalloc.h					\
+ 	src/weston-egl-ext.h
+ 
++if SYSTEMD_NOTIFY_SUPPORT
++module_LTLIBRARIES += systemd-notify.la
++systemd_notify_la_LDFLAGS = -module -avoid-version
++systemd_notify_la_LIBADD = $(SYSTEMD_DAEMON_LIBS)
++systemd_notify_la_CFLAGS =			\
++	$(SYSTEMD_DAEMON_LIBS)			\
++	$(PIXMAN_CFLAGS)			\
++	$(AM_CFLAGS)
++systemd_notify_la_SOURCES =			\
++	src/systemd-notify.c			\
++	shared/zalloc.h				\
++	compositor.h
++endif
++
+ nodist_weston_SOURCES =					\
+ 	protocol/screenshooter-protocol.c		\
+ 	protocol/screenshooter-server-protocol.h	\
+Index: git/configure.ac
+===================================================================
+--- git.orig/configure.ac	2015-11-30 15:39:47.807786943 +0000
++++ git/configure.ac	2015-11-30 15:38:21.863786943 +0000
+@@ -557,6 +557,18 @@
+ 
+ #PKG_CHECK_MODULES(WAYLAND_SCANNER, wayland-scanner)
+ 
++AC_ARG_ENABLE(systemd_notify,
++              AS_HELP_STRING([--enable-systemd-notify],
++                             [Enables systemd notifications to
++                              notify systemd about weston state
++                              and update watchdog.]),,
++              enable_systemd_notify=no)
++AM_CONDITIONAL(SYSTEMD_NOTIFY_SUPPORT, test x$enable_systemd_notify = xyes)
++if test "x$enable_systemd_notify" = "xyes"; then
++  AC_DEFINE([SYSTEMD_NOTIFY_SUPPORT], [1], [Build the systemd sd_notify support])
++  PKG_CHECK_MODULES(SYSTEMD_DAEMON, [libsystemd])
++fi
++
+ AC_CONFIG_FILES([Makefile src/version.h src/weston.pc])
+ 
+ AM_CONDITIONAL([HAVE_GIT_REPO], [test -f $srcdir/.git/logs/HEAD])
+@@ -583,6 +595,7 @@
+ 
+ 	weston-launch utility		${enable_weston_launch}
+ 	systemd-login support		${have_systemd_login}
++        systemd notify support          ${enable_systemd_notify}
+ 
+ 	DRM Compositor			${enable_drm_compositor}
+ 	X11 Compositor			${enable_x11_compositor}
+Index: git/src/systemd-notify.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ git/src/systemd-notify.c	2015-11-30 15:05:16.675786943 +0000
+@@ -0,0 +1,121 @@
++/*
++ * Copyright (c) 2015 General Electric Company. All rights reserved.
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining
++ * a copy of this software and associated documentation files (the
++ * "Software"), to deal in the Software without restriction, including
++ * without limitation the rights to use, copy, modify, merge, publish,
++ * distribute, sublicense, and/or sell copies of the Software, and to
++ * permit persons to whom the Software is furnished to do so, subject to
++ * the following conditions:
++ *
++ * The above copyright notice and this permission notice (including the
++ * next paragraph) shall be included in all copies or substantial
++ * portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
++ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
++ * NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
++ * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
++ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
++ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++ * SOFTWARE.
++ */
++
++#include "config.h"
++
++#include <errno.h>
++#include <stdlib.h>
++#include <systemd/sd-daemon.h>
++#include <wayland-server.h>
++#include "shared/zalloc.h"
++#include "compositor.h"
++
++struct systemd_notifier {
++	int watchdog_time;
++	struct wl_event_source *watchdog_source;
++	struct wl_listener compositor_destroy_listener;
++};
++
++static int
++watchdog_handler(void *data)
++{
++	struct systemd_notifier *notifier = data;
++
++	wl_event_source_timer_update(notifier->watchdog_source,
++				     notifier->watchdog_time);
++
++	sd_notify(0, "WATCHDOG=1");
++
++	return 1;
++}
++
++static void
++weston_compositor_destroy_listener(struct wl_listener *listener, void *data)
++{
++	struct systemd_notifier *notifier;
++
++	sd_notify(0, "STOPPING=1");
++
++	notifier = container_of(listener,
++				struct systemd_notifier,
++				compositor_destroy_listener);
++
++	if (notifier->watchdog_source)
++		wl_event_source_remove(notifier->watchdog_source);
++
++	wl_list_remove(&notifier->compositor_destroy_listener.link);
++	free(notifier);
++}
++
++WL_EXPORT int
++module_init(struct weston_compositor *compositor,
++	    int *argc, char *argv[])
++{
++	char *tail;
++	char *watchdog_time_env;
++	struct wl_event_loop *loop;
++	long watchdog_time_conv;
++	struct systemd_notifier *notifier;
++
++	notifier = zalloc(sizeof *notifier);
++	if (notifier == NULL)
++		return -1;
++
++	notifier->compositor_destroy_listener.notify =
++		weston_compositor_destroy_listener;
++	wl_signal_add(&compositor->destroy_signal,
++		      &notifier->compositor_destroy_listener);
++
++	sd_notify(0, "READY=1");
++
++	/* 'WATCHDOG_USEC' is environment variable that is set
++	 * by systemd to transfer 'WatchdogSec' watchdog timeout
++	 * setting from service file.*/
++	watchdog_time_env = getenv("WATCHDOG_USEC");
++
++	if (!watchdog_time_env)
++		return 0;
++
++	errno = 0;
++	watchdog_time_conv = strtol(watchdog_time_env, &tail, 0);
++	if ((errno != 0) || (*tail != '\0'))
++		return 0;
++
++	/* Convert 'WATCHDOG_USEC' to milliseconds and notify
++	 * systemd every half of that time.*/
++	watchdog_time_conv /= 1000 * 2;
++	if (watchdog_time_conv <= 0)
++		return 0;
++
++	notifier->watchdog_time = watchdog_time_conv;
++
++	loop = wl_display_get_event_loop(compositor->wl_display);
++	notifier->watchdog_source =
++		wl_event_loop_add_timer(loop, watchdog_handler, notifier);
++	wl_event_source_timer_update(notifier->watchdog_source,
++				     notifier->watchdog_time);
++
++	return 0;
++}
