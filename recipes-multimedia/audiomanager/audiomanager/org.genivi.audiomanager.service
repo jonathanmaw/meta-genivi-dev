@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=org.genivi.audiomanager
+SystemdService = AudioManager.service
+Exec=/usr/bin/AudioManager -c/usr/lib/audioManager/control/libPluginControlInterface.so -l/usr/lib/audioManager/command/ -r/usr/lib/audioManager/routing/ -T1
