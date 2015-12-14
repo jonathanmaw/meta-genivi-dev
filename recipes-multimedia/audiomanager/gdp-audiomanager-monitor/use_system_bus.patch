@@ -1,0 +1,31 @@
+Index: git/audiomanagerdbusinterface.cpp
+===================================================================
+--- git.orig/audiomanagerdbusinterface.cpp	2015-12-11 16:36:36.875786943 +0000
++++ git/audiomanagerdbusinterface.cpp	2015-12-14 14:43:23.711786943 +0000
+@@ -3,7 +3,7 @@
+ 
+ AudioManagerDBusInterface::AudioManagerDBusInterface(QObject* parent, QString serviceName, QString objectPath, QString interfaceName) :
+     QObject(parent),
+-    mDBusConnection(QDBusConnection::sessionBus())
++    mDBusConnection(QDBusConnection::systemBus())
+ {
+     initDBusInterface(serviceName, objectPath, interfaceName);
+     log("AudioManagerDBusInterface created");
+@@ -15,7 +15,7 @@
+ 
+ AudioManagerDBusInterface::AudioManagerDBusInterface(QObject* parent) :
+     QObject(parent),
+-    mDBusConnection(QDBusConnection::sessionBus())
++    mDBusConnection(QDBusConnection::systemBus())
+ {
+     initDBusInterface("org.genivi.audiomanager", "/org/genivi/audiomanager/commandinterface", "org.genivi.audiomanager.commandinterface");
+     log("AudioManagerDBusInterface created");
+@@ -98,7 +98,7 @@
+     mInterfaceName = interfaceName;
+ 
+     if (!mDBusConnection.isConnected()) {
+-        mDBusConnection.connectToBus(QDBusConnection::SessionBus, serviceName);
++        mDBusConnection.connectToBus(QDBusConnection::SystemBus, serviceName);
+         return;
+     }
+ 
